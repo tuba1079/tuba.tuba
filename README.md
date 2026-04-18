@@ -75,8 +75,8 @@ tradeoff modulated by external visual guidance.
 | `report` | HTML report |
 
 ---
-```
 ## Project Structure
+```
 tuba.tuba/
 |── README.md
 |── LICENSE
