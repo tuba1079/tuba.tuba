@@ -29,21 +29,6 @@ tradeoff modulated by external visual guidance.
 - **Format:** 250 CSV files — columns: x, y, time
 - **Sampling rate:** ~50 Hz
 
-```
-## Project Structure
-tuba.tuba/
-|── README.md
-|── LICENSE
-|── data/          → raw CSV files (subset for testing)
-|── results/       → output figures and statistics
-|── notebooks/     → Jupyter and Rmd notebooks (optional)
-|── sources/       → reusable Python and R functions
-|── main.ipynb     → entry point: all Python analyses
-|── main.Rmd       → entry point: all R analyses
-|── main.Rproj     → RStudio project file
-
-```
-
 ## Analysis Pipeline
 
 ### Python (main.ipynb)
@@ -90,7 +75,21 @@ tuba.tuba/
 | `report` | HTML report |
 
 ---
+```
+## Project Structure
+tuba.tuba/
+|── README.md
+|── LICENSE
+|── data/          → raw CSV files (subset for testing)
+|── results/       → output figures and statistics
+|── notebooks/     → Jupyter and Rmd notebooks (optional)
+|── sources/       → reusable Python and R functions
+|── main.ipynb     → entry point: all Python analyses
+|── main.Rmd       → entry point: all R analyses
+|── main.Rproj     → RStudio project file
+
+```
 
 ## License
 MIT License — see LICENSE file
-## Project Structure
+
