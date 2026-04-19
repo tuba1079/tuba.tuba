@@ -59,7 +59,7 @@ library(kableExtra)
 # Set ggplot theme
 theme_set(theme_minimal(base_size = 12))
 ```
-# Load and Prepare Data
+#Step 1: Load and Prepare Data
 
 ```{r load-data}
 
@@ -100,7 +100,7 @@ head(data) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
 ```
 
-# Descriptive Statistics
+#Step 2: Descriptive Statistics
 
 ```{r descriptive-stats}
 # SUMMARY STATISTICS BY TASK
@@ -165,7 +165,7 @@ cat(sprintf("  - Difference: %.3f cm (%.1f%% less accurate for drawing)\n",
             rmse_diff$difference, (rmse_diff$difference / rmse_diff$tracing) * 100))
 ```
 
-# Normality Assessment
+#Step 3: Normality Assessment
 
 ## QQ Plots
 
