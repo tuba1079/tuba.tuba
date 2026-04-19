@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Drawing vs Tracing: Speed-Accuracy Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.65;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        header {
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 25px;
+            margin-bottom: 35px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 1.9em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .header-info {
+            font-size: 0.95em;
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        
+        .header-info p {
+            margin: 4px 0;
+        }
+        
+        .logo {
+            margin: 20px 0;
+        }
+        
+        .logo img {
+            max-width: 300px;
+            height: auto;
+        }
+        
+        .github-link {
+            display: inline-block;
+            background-color: #24292e;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            margin-top: 12px;
+        }
+        
+        .github-link:hover {
+            background-color: #1a1e22;
+        }
+        
+        .abstract {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin: 30px 0;
+            border-left: 4px solid #3498db;
+            font-size: 0.96em;
+            text-align: justify;
+        }
+        
+        .abstract h2 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .toc {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+        
+        .toc h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .toc li {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .toc li::before {
+            content: "→ ";
+            color: #3498db;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        section {
+            margin-bottom: 45px;
+        }
+        
+        h2 {
+            font-size: 1.4em;
+            color: #2c3e50;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+            margin-bottom: 15px;
+            margin-top: 30px;
+            font-weight: 500;
+        }
+        
+        h3 {
+            font-size: 1.1em;
+            color: #34495e;
+            margin-top: 18px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        h4 {
+            font-size: 1em;
+            color: #34495e;
+            margin-top: 14px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        p {
+            margin-bottom: 13px;
+            text-align: justify;
+            font-size: 0.97em;
+        }
+        
+        ul, ol {
+            margin: 12px 0;
+            padding-left: 28px;
+        }
+        
+        li {
+            margin: 8px 0;
+            line-height: 1.7;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.93em;
+        }
+        
+        table th {
+            background-color: #34495e;
+            color: white;
+            padding: 11px;
+            text-align: left;
+            font-weight: 500;
+            border: 1px solid #2c3e50;
+        }
+        
+        table td {
+            padding: 10px 11px;
+            border: 1px solid #ddd;
+        }
+        
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .stats-box {
+            background-color: #e8f8f5;
+            padding: 14px;
+            border-left: 4px solid #16a085;
+            margin: 15px 0;
+            font-size: 0.96em;
+            line-height: 1.7;
+        }
+        
+        .stats-box strong {
+            color: #0d5845;
+        }
+        
+        .warning-box {
+            background-color: #fef5e7;
+            padding: 14px;
+            border-left: 4px solid #f39c12;
+            margin: 15px 0;
+            font-size: 0.96em;
+        }
+        
+        .figure {
+            margin: 30px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .figure img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            display: block;
+            margin: 15px auto;
+        }
+        
+        .figure-caption {
+            font-style: italic;
+            color: #666;
+            margin-top: 10px;
+            font-size: 0.92em;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .figure-description {
+            color: #555;
+            margin-top: 8px;
+            font-size: 0.9em;
+            text-align: justify;
+        }
+        
+        footer {
+            border-top: 2px solid #ddd;
+            margin-top: 40px;
+            padding-top: 20px;
+        }
+        
+        .references {
+            margin-top: 30px;
+        }
+        
+        .references h2 {
+            margin-bottom: 20px;
+        }
+        
+        .reference {
+            margin-bottom: 15px;
+            padding-left: 30px;
+            text-indent: -30px;
+            font-size: 0.93em;
+            line-height: 1.6;
+        }
+        
+        .page-break {
+            page-break-after: always;
+            margin: 40px 0;
+            border-bottom: 2px dashed #ddd;
+        }
+        
+        @media print {
+            .page-break {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- TITLE PAGE -->
+        <header>
+            <h1>Circle Drawing vs Tracing:<br>Speed-Accuracy Analysis</h1>
+            
+            <div class="header-info">
+                <p><strong>Tuba Tuba</strong></p>
+                <p><em>Python-R-Git: Engineering and Ergonomics of Physical Activity</em></p>
+                <p>IDIL Graduate Program</p>
+                <p>Université de Montpellier — IMT Mines Alès</p>
+                <p><strong>Supervisor:</strong> Denis MOTTET</p>
+                <p style="margin-top: 10px;"><em>GitHub Repository:</em><br>
+                <a href="https://github.com/tuba1079/tuba.tuba" target="_blank">https://github.com/tuba1079/tuba.tuba</a></p>
+                <p style="margin-top: 15px;"><strong>April 19, 2026</strong></p>
+            </div>
+            
+            <div class="logo">
+                <img src="download.png" alt="EuroMov Digital Health in Motion">
+            </div>
+        </header>
+
+        <div class="page-break"></div>
+
+        <!-- ABSTRACT -->
+        <div class="abstract">
+            <h2>Abstract</h2>
+            <p>
+                This study examines the speed-accuracy tradeoff in cyclic upper-limb movements by comparing internally guided (freehand drawing) and externally guided (tracing) tasks. Using data from 125 healthy participants performing 250 circular movement trials, we analyzed Movement Time (MT) and Root Mean Square Error (RMSE) as measures of execution speed and trajectory accuracy. Results demonstrated that drawing was significantly faster than tracing (<em>M</em> = 5.94 sec vs. <em>M</em> = 26.58 sec, <em>p</em> < 0.001), while tracing produced more accurate trajectories (<em>M</em> = 0.362 cm vs. <em>M</em> = 0.681 cm, <em>p</em> < 0.001). Critically, no significant within-task speed-accuracy correlation was detected in either condition (Drawing: ρ = −0.083, <em>p</em> = 0.358; Tracing: ρ = −0.056, <em>p</em> = 0.534). These findings suggest that task-inherent motor control strategies (feedforward vs. feedback) determine observed performance differences rather than fundamental speed-accuracy constraints operating within individual participants.
+            </p>
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- SECTION 1: INTRODUCTION -->
+        <section>
+            <h2>1 Introduction</h2>
+            
+            <h3>1.1 Research Context and Theoretical Foundation</h3>
+            
+            <p>
+                The analysis of human motor control helps explain how the central nervous system regulates movement under different task conditions. One key concept is the speed–accuracy tradeoff [2], which describes how faster movements often lead to lower accuracy due to limits in motor planning and execution.
+            </p>
+            
+            <p>
+                In cyclic upper-limb movements such as circular drawing, this relationship depends on task context, particularly whether the movement is internally generated (drawing) or externally guided (tracing). Freehand drawing relies primarily on internal motor planning, whereas tracing tasks introduce external visual constraints that may enhance spatial accuracy but potentially increase execution time.
+            </p>
+            
+            <p>
+                Research on motor learning demonstrates that movements without online visual feedback enhance feedforward control mechanisms [1], whereas feedback-based control relies on continuous visual guidance and online error correction [4]. This distinction between feedforward and feedback control strategies has implications for understanding task-dependent speed-accuracy relationships.
+            </p>
+            
+            <h3>1.2 Research Question and Hypotheses</h3>
+            
+            <p><strong>Research Question:</strong> In healthy adults performing circular hand movements, does faster execution come at the cost of reduced trajectory accuracy, and does this speed-accuracy tradeoff differ between internally guided (drawing) and externally guided (tracing) conditions?</p>
+            
+            <p>To answer this question, two complementary metrics are analyzed:</p>
+            
+            <ul>
+                <li><strong>Movement Time (MT)</strong> — representing execution speed</li>
+                <li><strong>Root Mean Square Error (RMSE)</strong> — representing spatial accuracy</li>
+            </ul>
+            
+            <p>Based on established motor control theory, the following hypotheses are tested:</p>
+            
+            <ul>
+                <li><strong>H1:</strong> Drawing (freehand) is faster than tracing (guided)</li>
+                <li><strong>H2:</strong> Tracing is more accurate (lower RMSE) than drawing</li>
+                <li><strong>H3:</strong> A negative relationship exists between movement time and accuracy within each task (speed–accuracy tradeoff)</li>
+            </ul>
+            
+            <h3>1.3 Data Source and Study Design</h3>
+            
+            <p>
+                This question is investigated using the open dataset associated with [3], which provides digitized <em>x</em>–<em>y</em> trajectories and timestamps for drawing and tracing tasks in healthy participants. The analysis combines Python-based data processing with R-based statistical testing and visualization.
+            </p>
+        </section>
+
+        <div class="page-break"></div>
+
+        <!-- SECTION 2: METHODS -->
+        <section>
+            <h2>2 Methods</h2>
+            
+            <h3>2.1 Data Structure</h3>
+            
+            <p>
+                Data were obtained from the open-access dataset linked to [3]. The dataset contains CSV files with planar movement signals (<em>x</em>, <em>y</em>) and task-specific time variables. The dataset includes 250 trials from 125 participants (125 drawing and 125 tracing trials). Trajectories were recorded using digitized pen coordinates with millimeter-level resolution. File names encode task type and participant information such as age, gender, and laterality.
+            </p>
+            
+            <div class="warning-box">
+                <strong>Data Quality Consideration:</strong> Some participant metadata contained inconsistencies (e.g., implausible ages such as 2 or 3 years). These values were kept unchanged to preserve data integrity and avoid bias from manual correction.
+            </div>
+            
+            <h3>2.2 Python Data Processing</h3>
+            
+            <p>Trajectory data were processed in Python (main.ipynb) using pandas, numpy, and scipy. The pipeline included:</p>
+            
+            <ol>
+                <li>Loading and validating trajectory files</li>
+                <li>Computing movement time and RMSE</li>
+                <li>Generating velocity profiles</li>
+                <li>Producing visualizations</li>
+            </ol>
+            
+            <p>Two main variables were extracted:</p>
+            
+            <ul>
+                <li><strong>Movement Time (MT):</strong> Duration from movement start to end</li>
+                <li><strong>RMSE:</strong> Variability of radial distance from the centroid</li>
+            </ul>
+            
+            <p>
+                Coordinates were smoothed using a Savitzky–Golay filter to reduce noise. The centroid was computed as the mean position, and RMSE was calculated as the deviation of radii from the mean radius. This RMSE measure serves as an operational approximation of trajectory accuracy rather than a full geometric circle-fitting method. Velocity profiles were computed by differentiating position over time and normalizing movement duration (0–100%). These profiles provide additional insight into movement dynamics but are not used for hypothesis testing.
+            </p>
+            
+            <h3>2.3 Task Classification</h3>
+            
+            <p>Task type (drawing vs. tracing) was identified from file names. This method is reliable due to consistent naming conventions in the dataset.</p>
+            
+            <h3>2.4 Statistical Analysis</h3>
+            
+            <p>Statistical analysis was performed in R (main.Rmd).</p>
+            
+            <h4>2.4.1 Normality Assessment</h4>
+            <p>Normality was assessed using QQ plots and Shapiro–Wilk tests. Results showed non-normal distributions for movement time (<em>p</em> < 0.05), supporting the use of non-parametric methods.</p>
+            
+            <h4>2.4.2 Paired Comparisons</h4>
+            <p>Drawing and tracing were compared using the Wilcoxon signed-rank test for paired data. Two directional tests were used:</p>
+            <ul>
+                <li>Movement Time: drawing < tracing</li>
+                <li>RMSE: drawing > tracing</li>
+            </ul>
+            
+            <h4>2.4.3 Correlation Analysis</h4>
+            <p>Spearman correlations were computed separately for each task to test the speed–accuracy relationship.</p>
+            
+            <h4>2.4.4 Robustness Check</h4>
+            <p>Paired <em>t</em>-tests were also performed to confirm consistency of results across statistical methods.</p>
+        </section>
+
+        <div class="page-break"></div>
+
+        <!-- SECTION 3: RESULTS -->
+        <section>
+            <h2>3 Results</h2>
+            
+            <h3>3.1 Hypothesis Testing Summary</h3>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hypothesis</th>
+                        <th>Prediction</th>
+                        <th>Result</th>
+                        <th>Statistical Evidence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>H1</strong></td>
+                        <td>Drawing faster than tracing</td>
+                        <td style="color: green; font-weight: bold;">SUPPORTED</td>
+                        <td>Wilcoxon <em>V</em> = 0, <em>p</em> < 0.001</td>
+                    </tr>
+                    <tr>
+                        <td><strong>H2</strong></td>
+                        <td>Tracing more accurate than drawing</td>
+                        <td style="color: green; font-weight: bold;">SUPPORTED</td>
+                        <td>Wilcoxon <em>V</em> = 7042, <em>p</em> < 0.001</td>
+                    </tr>
+                    <tr>
+                        <td><strong>H3</strong></td>
+                        <td>Speed-accuracy tradeoff within tasks</td>
+                        <td style="color: orange; font-weight: bold;">NOT SUPPORTED</td>
+                        <td>Drawing: ρ = −0.083, <em>p</em> = 0.358<br>Tracing: ρ = −0.056, <em>p</em> = 0.534</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>3.2 Movement Time Comparison</h3>
+            
+            <div class="stats-box">
+                <strong>Drawing:</strong> <em>M</em> = 5.94 sec, <em>SD</em> = 4.08 sec<br>
+                <strong>Tracing:</strong> <em>M</em> = 26.58 sec, <em>SD</em> = 17.07 sec<br>
+                <strong>Difference:</strong> 20.64 sec (347% slower for tracing)<br>
+                <strong>Wilcoxon Test:</strong> <em>V</em> = 0, <em>p</em> < 0.001, large effect (<em>r</em> ≈ 0.70)
+            </div>
+            
+            <p>
+                Drawing was significantly faster than tracing (H1 supported). The <em>V</em> statistic of 0 (meaning 0 out of 125 paired comparisons favor tracing) indicates near-universal speed advantage for drawing across the sample. The 4.5-fold difference demonstrates that feedforward-controlled movements (drawing) achieve substantially higher execution speed than feedback-controlled movements (tracing).
+            </p>
+            
+            <div class="figure">
+                <div class="figure-caption">Figure 1: Movement Time Comparison (Wilcoxon Signed-Rank Test)</div>
+                <img src="figure1.png" alt="Movement Time Comparison Box Plot">
+                <div class="figure-description">
+                    Box plot and individual data points showing movement duration for drawing (freehand) and tracing (guided) tasks. Drawing demonstrates significantly faster execution. Wilcoxon <em>V</em> = 0, <em>p</em> < 0.001 indicates robust evidence against the null hypothesis of equal execution speeds.
+                </div>
+            </div>
+            
+            <h3>3.3 Accuracy Comparison</h3>
+            
+            <div class="stats-box">
+                <strong>Drawing:</strong> <em>M</em> = 0.681 cm, <em>SD</em> = 0.346 cm<br>
+                <strong>Tracing:</strong> <em>M</em> = 0.362 cm, <em>SD</em> = 0.205 cm<br>
+                <strong>Difference:</strong> 0.319 cm (88% higher error for drawing)<br>
+                <strong>Wilcoxon Test:</strong> <em>V</em> = 7042, <em>p</em> < 0.001, large effect (<em>r</em> ≈ 0.70)
+            </div>
+            
+            <p>
+                Tracing produced significantly more accurate trajectories than drawing (H2 supported). Drawing trajectories deviated approximately twice as far from ideal circle geometry compared to traced trajectories. The large <em>V</em> statistic (7042 out of ∼8000 possible comparisons favor tracing) indicates consistency of accuracy advantage across the sample. This dissociation—drawing faster but less accurate, tracing slower but more accurate—demonstrates the fundamental speed-accuracy tradeoff operating between task types.
+            </p>
+            
+            <div class="figure">
+                <div class="figure-caption">Figure 2: Accuracy Comparison (RMSE - Wilcoxon Signed-Rank Test)</div>
+                <img src="figure2.png" alt="Accuracy Comparison RMSE Box Plot">
+                <div class="figure-description">
+                    Root Mean Square Error (RMSE) by task type, with lower values indicating more accurate trajectories. Tracing produces significantly more accurate movements than drawing. Wilcoxon <em>V</em> = 7042, <em>p</em> < 0.001 indicates tracing's consistent accuracy advantage.
+                </div>
+            </div>
+            
+            <h3>3.4 Speed-Accuracy Correlation Within Tasks</h3>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Spearman ρ</th>
+                        <th><em>p</em>-value</th>
+                        <th>Interpretation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Drawing</td>
+                        <td>−0.083</td>
+                        <td>0.358</td>
+                        <td>Not significant</td>
+                    </tr>
+                    <tr>
+                        <td>Tracing</td>
+                        <td>−0.056</td>
+                        <td>0.534</td>
+                        <td>Not significant</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <p>
+                Neither task showed significant speed-accuracy correlation (H3 not supported). Within drawing movements, individual differences in movement speed did not predict corresponding accuracy changes (ρ = −0.083, <em>p</em> = 0.358). Similarly, within tracing, no significant correlation emerged (ρ = −0.056, <em>p</em> = 0.534). These weak, non-significant correlations indicate absence of within-task speed-accuracy tradeoff despite the robust between-task differences observed in H1 and H2.
+            </p>
+            
+            <div class="figure">
+                <div class="figure-caption">Figure 3: Speed-Accuracy Scatter Plot (Spearman Correlation Within Tasks)</div>
+                <img src="figure3.png" alt="Speed-Accuracy Scatter Plot">
+                <div class="figure-description">
+                    Scatter plot of movement time vs. RMSE for both tasks. Red points: drawing (ρ = −0.083, <em>p</em> = 0.358, non-significant); Blue points: tracing (ρ = −0.056, <em>p</em> = 0.534, non-significant). Weak correlations indicate no classical speed-accuracy tradeoff operates within either task type.
+                </div>
+            </div>
+            
+            <h3>3.5 Normality Assessment and Statistical Assumptions</h3>
+            
+            <div class="figure">
+                <div class="figure-caption">Figure 4: Q-Q Plots for Normality Assessment (Shapiro-Wilk Tests)</div>
+                <img src="figure4.png" alt="Q-Q Plots for Normality">
+                <div class="figure-description">
+                    Quantile–quantile plots comparing observed distributions (movement time and RMSE) against normal distribution. Deviations from the diagonal line indicate non-normality for movement time, justifying the use of non-parametric Wilcoxon tests. Shapiro-Wilk tests: MT <em>p</em> < 0.05 (non-normal), RMSE <em>p</em> > 0.05 (approximately normal).
+                </div>
+            </div>
+            
+            <p>
+                Shapiro–Wilk tests indicated non-normal distributions for movement time (<em>p</em> < 0.05) but approximately normal distributions for RMSE. This heterogeneity justified the use of non-parametric Wilcoxon signed-rank tests for hypothesis testing. Robustness checks using parametric paired <em>t</em>-tests yielded identical <em>p</em> < 0.001 conclusions, confirming finding stability across statistical methods.
+            </p>
+        </section>
+
+        <div class="page-break"></div>
+
+        <!-- SECTION 4: DISCUSSION -->
+        <section>
+            <h2>4 Discussion</h2>
+            
+            <h3>4.1 Interpretation: Task-Dependent Motor Control Strategies</h3>
+            
+            <p>
+                The dissociation between drawing and tracing—H1 and H2 supported, H3 not supported—shows that speed and accuracy differences reflect distinct motor control strategies rather than points along a continuous speed–accuracy continuum. Drawing relies on feedforward control and prioritizes rapid execution using preplanned motor commands based on internal representations. Tracing relies on feedback control and prioritizes spatial accuracy through continuous visual guidance and online correction.
+            </p>
+            
+            <p>
+                Within-task analysis shows weak and non-significant correlations between movement time and RMSE in both conditions. Faster movements do not systematically reduce accuracy within drawing or tracing. Therefore, the classical speed–accuracy tradeoff does not appear at the individual performance level in this dataset. Instead, the tradeoff operates mainly between tasks rather than within tasks.
+            </p>
+            
+            <h3>4.2 Limitations</h3>
+            
+            <ul>
+                <li>The accuracy metric is based on centroid-derived radii rather than an optimized geometric circle fit. This approach may underestimate structured deviations such as elliptical distortions.</li>
+                <li>The analysis focuses on global metrics (movement time and RMSE) and does not capture temporal dynamics or local trajectory variability.</li>
+                <li>Participant metadata contains inconsistencies (e.g., implausible ages), which were retained without modification to preserve dataset integrity and avoid selection bias.</li>
+                <li>The absence of a strong within-task speed–accuracy tradeoff may also reflect constrained experimental conditions or inter-individual variability.</li>
+            </ul>
+            
+            <h3>4.3 Conclusion</h3>
+            
+            <p>
+                Analysis of 250 circular movement trials from 125 participants demonstrates that task type (internally-guided drawing vs. externally-guided tracing) fundamentally structures speed-accuracy relationships. Drawing achieves a 4.5-fold speed advantage at the cost of 88% higher accuracy error compared to tracing. Critically, this between-task dissociation does not reflect a within-task speed-accuracy tradeoff, suggesting that task-inherent motor control mechanisms determine the observed differences rather than fundamental motor constraints.
+            </p>
+        </section>
+
+        <div class="page-break"></div>
+
+        <!-- REFERENCES -->
+        <footer class="references">
+            <h2>References</h2>
+            
+            <div class="reference">
+                [1] Diedrichsen, J., Kording, K. P., & Ostry, D. J. (2021). Motor skill learning without online visual feedback enhances feedforward control. <em>Nature Reviews Neuroscience</em>, 22(12), 746–763.
+            </div>
+            
+            <div class="reference">
+                [2] Fitts, P. M. (1954). The information capacity of the human motor system. <em>Journal of Experimental Psychology</em>, 47(6), 381–391.
+            </div>
+            
+            <div class="reference">
+                [3] Quarta, E., Zago, M., Avanzini, P., et al. (2021). The speed-accuracy tradeoff in manual drawing. <em>Experimental Brain Research</em>, 239(3), 1089–1105.
+            </div>
+            
+            <div class="reference">
+                [4] Seidler, R. D., Noll, D. C., & Thiers, G. (2004). Feedforward and feedback processes in motor control. <em>NeuroImage</em>, 22(4), 1775–1783.
+            </div>
+            
+            <div class="reference">
+                [5] Wolpert, D. M., Diedrichsen, J., & Leijnse, J. N. (2011). Principles of sensorimotor learning. <em>Nature Reviews Neuroscience</em>, 12(12), 739–751.
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
