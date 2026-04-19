@@ -32,18 +32,19 @@ tradeoff modulated by external visual guidance.
 ## Analysis Pipeline
 
 ### Python (main.ipynb)
-- Load and parse all 250 CSV files
-- Smooth trajectories (Savitzky-Golay filter)
-- Compute movement time (MT) per subject per task
-- Fit circle → compute RMSE (accuracy measure)
-- Compute tangential velocity profiles
-- Visualize trajectories, velocity, MT and RMSE distributions
+- Load and parse all CSV files
+- Smooth trajectories using Savitzky–Golay filtering
+- Compute movement time per subject and task
+- Compute RMSE as a trajectory-accuracy metric
+- Compute time-normalized velocity profiles
+- Generate trajectory and kinematic visualizations
 
 ### R (main.Rmd)
 - Descriptive statistics (mean, SD, median) per task
 - Normality check (QQ plots + Shapiro-Wilk test)
 - Wilcoxon signed-rank test: MT drawing vs tracing
 - Wilcoxon signed-rank test: RMSE drawing vs tracing
+- Robustness Analysis: Perform paired t-tests
 - Correlation test: MT vs RMSE per task
 - Box plots of MT and RMSE
 
@@ -59,9 +60,16 @@ tradeoff modulated by external visual guidance.
 - seaborn
 
 ### R
+- tidyverse
 - ggplot2
 - dplyr
 - tidyr
+- broom
+- rstatix
+- effsize
+- ggpubr
+- patchwork
+- kableExtra
 
 ---
 
@@ -78,15 +86,36 @@ tradeoff modulated by external visual guidance.
 ## Project Structure
 ```
 tuba.tuba/
-|── README.md
-|── LICENSE
-|── data/          → raw CSV files (subset for testing)
-|── results/       → output figures and statistics
-|── notebooks/     → Jupyter and Rmd notebooks (optional)
-|── sources/       → reusable Python and R functions
-|── main.ipynb     → entry point: all Python analyses
-|── main.Rmd       → entry point: all R analyses
-|── main.Rproj     → RStudio project file
+├── README.md
+├── LICENSE
+├── main.ipynb
+├── main.Rmd
+├── main.Rproj
+├── Tuba_Tuba.html
+├── data/
+│   └── (raw CSV files used for testing)
+├── results/
+│   ├── main_results.csv
+│   ├── figure1.png
+│   ├── figure2.png
+│   ├── figure3.png
+│   ├── figure4.png
+│   ├── boxplots-1.png
+│   ├── download.png
+│   ├── movement_time_boxplot.png
+│   ├── rmse_boxplot.png
+│   ├── speed_accuracy_tradeoff.png
+│   ├── subject-profiles-1.png
+│   ├── trajectories.png
+│   ├── velocity_average.png
+│   ├── velocity_normalized_average.png
+│   ├── velocity_normalized_individual.png
+│   ├── velocity_normalized.png
+│   └── velocity_profiles.png
+├── notebooks/
+│   └── (notebook copies)
+└── sources/
+    └── (optional reusable functions)
 
 ```
 
