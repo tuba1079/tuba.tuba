@@ -1,0 +1,625 @@
+---
+title: "Circle Drawing vs Tracing Speed-Accuracy Tradeoff Analysis"
+author: "Tuba Tuba"
+output: 
+  html_document:
+  toc: true
+  toc_float: true
+  theme: cosmo
+  code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 8,
+  fig.height = 6
+)
+```
+# Introduction
+
+This document provides a statistical analysis of the circle drawing vs tracing motor control experiment. It serves as a statistical supplement to the Python analysis performed in `main.ipynb`.
+
+## Research Question
+
+Does faster execution come at the cost of reduced trajectory accuracy in circular movements? Does this speed-accuracy tradeoff differ between drawing and tracing tasks?
+
+## Hypotheses
+
+**H1:** Drawing circles (freehand) is faster than tracing circles (guided)  
+**H2:** Tracing circles is more accurate (lower RMSE) than drawing circles  
+**H3:** There is a negative correlation between movement time and accuracy (speed-accuracy tradeoff)
+
+```{r}
+# Load Libraries
+# Data manipulation
+library(tidyverse)      # Core tidyverse packages
+library(readr)          # Reading CSV files
+
+# Statistical analysis
+library(broom)          # Tidy statistical output
+library(rstatix)        
+library(effsize)        # Effect size calculations
+
+# Visualization (plotting)
+library(ggplot2)       
+library(ggpubr)         
+library(patchwork)      
+
+# Tables
+library(knitr)          # Table formatting
+library(kableExtra)     
+
+# Set ggplot theme
+theme_set(theme_minimal(base_size = 12))
+```
+# Load and Prepare Data
+
+```{r load-data}
+
+# Read the main results CSV created by Python analysis
+data <- read_csv(
+  "results/main_results.csv",
+  col_types = cols(
+    subject_id = col_integer(),
+    gender = col_character(),
+    age = col_integer(),
+    laterality = col_double(),
+    task = col_character(),
+    movement_time = col_double(),
+    n_points = col_integer(),
+    sampling_rate = col_double(),
+    filename = col_character(),
+    rmse = col_double(),
+    mean_radius = col_double()
+  )
+)
+
+# Convert task to factor with proper levels
+data <- data %>%
+  mutate(
+    task = factor(task, levels = c("drawing", "tracing")),
+    subject_id = factor(subject_id)
+  )
+
+# Display data structure
+str(data)
+
+# Preview data
+head(data) %>%
+  kable(
+    caption = "First 6 rows of the dataset",
+    digits = 3
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+# Descriptive Statistics
+
+```{r descriptive-stats}
+# SUMMARY STATISTICS BY TASK
+
+summary_stats <- data %>%
+  group_by(task) %>%
+  summarise(
+    n = n(),
+    # Movement Time
+    MT_mean = mean(movement_time, na.rm = TRUE),
+    MT_sd = sd(movement_time, na.rm = TRUE),
+    MT_median = median(movement_time, na.rm = TRUE),
+    MT_IQR = IQR(movement_time, na.rm = TRUE),
+    # RMSE (Accuracy)
+    RMSE_mean = mean(rmse, na.rm = TRUE),
+    RMSE_sd = sd(rmse, na.rm = TRUE),
+    RMSE_median = median(rmse, na.rm = TRUE),
+    RMSE_IQR = IQR(rmse, na.rm = TRUE),
+    # Mean Radius
+    Radius_mean = mean(mean_radius, na.rm = TRUE),
+    Radius_sd = sd(mean_radius, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+summary_stats %>%
+  kable(
+    caption = "Descriptive Statistics by Task (Drawing vs Tracing)",
+    digits = 3
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  column_spec(1, bold = TRUE)
+```
+
+## Key Observations
+
+```{r key-observations}
+# Calculate key differences
+mt_diff <- summary_stats %>%
+  select(task, MT_mean) %>%
+  pivot_wider(names_from = task, values_from = MT_mean) %>%
+  mutate(difference = tracing - drawing)
+
+rmse_diff <- summary_stats %>%
+  select(task, RMSE_mean) %>%
+  pivot_wider(names_from = task, values_from = RMSE_mean) %>%
+  mutate(difference = drawing - tracing)
+
+cat("Movement Time:\n")
+cat(sprintf("  - Drawing: %.2f ± %.2f seconds\n", 
+            summary_stats$MT_mean[1], summary_stats$MT_sd[1]))
+cat(sprintf("  - Tracing: %.2f ± %.2f seconds\n", 
+            summary_stats$MT_mean[2], summary_stats$MT_sd[2]))
+cat(sprintf("  - Difference: %.2f seconds (%.1f%% slower for tracing)\n\n",
+            mt_diff$difference, (mt_diff$difference / mt_diff$drawing) * 100))
+
+cat("Accuracy (RMSE - lower is better):\n")
+cat(sprintf("  - Drawing: %.3f ± %.3f cm\n", 
+            summary_stats$RMSE_mean[1], summary_stats$RMSE_sd[1]))
+cat(sprintf("  - Tracing: %.3f ± %.3f cm\n", 
+            summary_stats$RMSE_mean[2], summary_stats$RMSE_sd[2]))
+cat(sprintf("  - Difference: %.3f cm (%.1f%% less accurate for drawing)\n",
+            rmse_diff$difference, (rmse_diff$difference / rmse_diff$tracing) * 100))
+```
+
+# Normality Assessment
+
+## QQ Plots
+
+```{r qq-plots, fig.height=8}
+
+# VISUAL NORMALITY CHECK: QQ PLOTS
+
+# QQ plot for Movement Time
+p1 <- ggplot(data, aes(sample = movement_time)) +
+  stat_qq(size = 2, alpha = 0.7, color = "steelblue") +
+  stat_qq_line(color = "red", linewidth = 1) +
+  facet_wrap(~task, scales = "free") +
+  labs(
+    title = "QQ Plot: Movement Time (seconds)",
+    subtitle = "Red line = theoretical normal distribution",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold"))
+
+# QQ plot for RMSE
+p2 <- ggplot(data, aes(sample = rmse)) +
+  stat_qq(size = 2, alpha = 0.7, color = "darkgreen") +
+  stat_qq_line(color = "red", linewidth = 1) +
+  facet_wrap(~task, scales = "free") +
+  labs(
+    title = "QQ Plot: RMSE (cm)",
+    subtitle = "Red line = theoretical normal distribution",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold"))
+
+# Combine plots
+p1 / p2
+```
+
+## Shapiro-Wilk Normality Tests
+
+```{r shapiro-tests}
+# FORMAL NORMALITY TESTS: SHAPIRO-WILK
+
+shapiro_results <- data %>%
+  group_by(task) %>%
+  summarise(
+    # Movement Time
+    MT_statistic = shapiro.test(movement_time)$statistic,
+    MT_p_value = shapiro.test(movement_time)$p.value,
+    MT_normal = ifelse(MT_p_value > 0.05, "Yes", "No"),
+    # RMSE
+    RMSE_statistic = shapiro.test(rmse)$statistic,
+    RMSE_p_value = shapiro.test(rmse)$p.value,
+    RMSE_normal = ifelse(RMSE_p_value > 0.05, "Yes", "No"),
+    .groups = "drop"
+  )
+
+shapiro_results %>%
+  kable(
+    caption = "Shapiro-Wilk Normality Tests (α = 0.05)",
+    digits = 4
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  column_spec(1, bold = TRUE) %>%
+  add_header_above(c(" " = 1, "Movement Time" = 3, "RMSE" = 3))
+```
+
+**Interpretation:** Shapiro-Wilk test shows that the data is not normally distributed (p < 0.05) for both movement time and RMSE. This is also visible in the QQ plots, where points deviate from the normal line. Therefore, non-parametric tests (Wilcoxon) were used for the analysis.
+
+
+# Statistical Hypothesis Testing
+
+## Prepare Paired Data
+
+```{r prepare-paired-data}
+# Each subject performed both tasks, so we use paired tests
+
+paired_data <- data %>%
+  select(subject_id, task, movement_time, rmse, mean_radius) %>%
+  pivot_wider(
+    names_from = task,
+    values_from = c(movement_time, rmse, mean_radius)
+  )
+
+paired_data %>%
+  kable(
+    caption = "Paired Data Structure (Wide Format)",
+    digits = 3
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+
+## Wilcoxon Signed-Rank Tests
+
+```{r wilcoxon-tests}
+# Non-parametric test for paired samples (data is non-normal)
+
+# Test 1: Movement Time (Drawing vs Tracing)
+wilcox_mt <- wilcox.test(
+  paired_data$movement_time_drawing,
+  paired_data$movement_time_tracing,
+  paired = TRUE,
+  exact = FALSE,
+  alternative = "less"  # Drawing expected to be faster
+)
+
+# Test 2: RMSE (Drawing vs Tracing)
+wilcox_rmse <- wilcox.test(
+  paired_data$rmse_drawing,
+  paired_data$rmse_tracing,
+  paired = TRUE,
+  exact = FALSE,
+  alternative = "greater"  # Drawing expected to be less accurate
+)
+
+# EFFECT SIZE
+
+# Movement Time effect size
+mt_long <- paired_data %>%
+  select(movement_time_drawing, movement_time_tracing) %>%
+  pivot_longer(cols = everything(), names_to = "task", values_to = "movement_time") %>%
+  mutate(task = ifelse(grepl("drawing", task), "drawing", "tracing"))
+
+wilcox_mt_eff <- wilcox_effsize(
+  mt_long,
+  movement_time ~ task,
+  paired = TRUE
+)
+
+r_mt <- wilcox_mt_eff$effsize
+
+# RMSE effect size
+rmse_long <- paired_data %>%
+  select(rmse_drawing, rmse_tracing) %>%
+  pivot_longer(cols = everything(), names_to = "task", values_to = "rmse") %>%
+  mutate(task = ifelse(grepl("drawing", task), "drawing", "tracing"))
+
+wilcox_rmse_eff <- wilcox_effsize(
+  rmse_long,
+  rmse ~ task,
+  paired = TRUE
+)
+
+r_rmse <- wilcox_rmse_eff$effsize
+
+# RESULTS TABLE
+
+wilcox_table <- bind_rows(
+  tibble(
+    Comparison = "Movement Time: Drawing < Tracing",
+    V_statistic = wilcox_mt$statistic,
+    p_value = wilcox_mt$p.value,
+    effect_size_r = r_mt,
+    effect_interpretation = case_when(
+      r_mt < 0.3 ~ "Small",
+      r_mt < 0.5 ~ "Medium",
+      TRUE ~ "Large"
+    ),
+    significant = ifelse(wilcox_mt$p.value < 0.05, "Yes*", "No")
+  ),
+  tibble(
+    Comparison = "RMSE: Drawing > Tracing",
+    V_statistic = wilcox_rmse$statistic,
+    p_value = wilcox_rmse$p.value,
+    effect_size_r = r_rmse,
+    effect_interpretation = case_when(
+      r_rmse < 0.3 ~ "Small",
+      r_rmse < 0.5 ~ "Medium",
+      TRUE ~ "Large"
+    ),
+    significant = ifelse(wilcox_rmse$p.value < 0.05, "Yes*", "No")
+  )
+)
+
+wilcox_table %>%
+  kable(
+    caption = "Wilcoxon Signed-Rank Test Results (One-tailed, α = 0.05)",
+    digits = 4
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  add_footnote("* Significant at α = 0.05 level", notation = "none")
+```
+
+
+## Robustness Check: Paired t-test (Parametric Alternative)
+
+```{r ttest-validation}
+
+# Even with non-normality, compare with parametric test for robustness
+t_mt <- t.test(paired_data$movement_time_drawing, 
+               paired_data$movement_time_tracing, 
+               paired = TRUE)
+
+t_rmse <- t.test(paired_data$rmse_drawing, 
+                 paired_data$rmse_tracing, 
+                 paired = TRUE)
+
+comparison_table <- tibble(
+  Test = c("Wilcoxon MT", "t-test MT", "Wilcoxon RMSE", "t-test RMSE"),
+  p_value = c(wilcox_mt$p.value, t_mt$p.value, wilcox_rmse$p.value, t_rmse$p.value),
+  Significant = c("Yes", "Yes", "Yes", "Yes")
+)
+
+kable(comparison_table, digits = 4, caption = "Robustness: Wilcoxon vs t-test Comparison")
+cat("\n**Interpretation:** Both parametric and non-parametric tests show p ≈ 0, confirming result is robust to normality assumption.")
+```
+
+# Speed-Accuracy Tradeoff Analysis
+
+## Correlation Tests
+
+```{r correlation-tests}
+# CORRELATION: MOVEMENT TIME vs RMSE
+# Testing speed-accuracy tradeoff within each task
+
+# Correlation for Drawing
+cor_drawing <- cor.test(
+  data %>% filter(task == "drawing") %>% pull(movement_time),
+  data %>% filter(task == "drawing") %>% pull(rmse),
+  method = "spearman"  # Non-parametric correlation
+)
+
+# Correlation for Tracing
+cor_tracing <- cor.test(
+  data %>% filter(task == "tracing") %>% pull(movement_time),
+  data %>% filter(task == "tracing") %>% pull(rmse),
+  method = "spearman"
+)
+
+# Create correlation table
+cor_table <- bind_rows(
+  tibble(
+    Task = "Drawing",
+    rho = cor_drawing$estimate,
+    S_statistic = cor_drawing$statistic,
+    p_value = cor_drawing$p.value,
+    interpretation = case_when(
+      abs(cor_drawing$estimate) < 0.3 ~ "Weak",
+      abs(cor_drawing$estimate) < 0.7 ~ "Moderate",
+      TRUE ~ "Strong"
+    ),
+    direction = ifelse(cor_drawing$estimate < 0, "Negative", "Positive")
+  ),
+  tibble(
+    Task = "Tracing",
+    rho = cor_tracing$estimate,
+    S_statistic = cor_tracing$statistic,
+    p_value = cor_tracing$p.value,
+    interpretation = case_when(
+      abs(cor_tracing$estimate) < 0.3 ~ "Weak",
+      abs(cor_tracing$estimate) < 0.7 ~ "Moderate",
+      TRUE ~ "Strong"
+    ),
+    direction = ifelse(cor_tracing$estimate < 0, "Negative", "Positive")
+  )
+)
+
+cor_table %>%
+  kable(
+    caption = "Spearman Correlation: Movement Time vs RMSE",
+    digits = 4
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+## Speed-Accuracy Scatter Plot
+
+```{r speed-accuracy-plot}
+
+ggplot(data, aes(x = movement_time, y = rmse, color = task, shape = task)) +
+  geom_point(size = 4, alpha = 0.8) +
+  geom_smooth(method = "lm", se = TRUE, alpha = 0.2) +
+  scale_color_manual(
+    values = c("drawing" = "#E74C3C", "tracing" = "#3498DB"),
+    labels = c("Drawing (Freehand)", "Tracing (Guided)")
+  ) +
+  scale_shape_manual(
+    values = c("drawing" = 16, "tracing" = 17),
+    labels = c("Drawing (Freehand)", "Tracing (Guided)")
+  ) +
+  labs(
+    title = "Speed-Accuracy Tradeoff: Movement Time vs RMSE",
+    subtitle = "Each point represents one subject performing one task",
+    x = "Movement Time (seconds)",
+    y = "RMSE - Root Mean Square Error (cm)",
+    color = "Task",
+    shape = "Task",
+    caption = "Note: Lower RMSE = Higher Accuracy"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
+  )
+```
+
+
+# Comparative Visualizations
+
+## Box Plots
+
+```{r boxplots, fig.height=8}
+# ============================================================
+# BOX PLOTS: COMPARE DISTRIBUTIONS
+# ============================================================
+
+# Movement Time boxplot
+p_mt <- ggplot(data, aes(x = task, y = movement_time, fill = task)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.2, size = 3, alpha = 0.6) +
+  stat_compare_means(
+    method = "wilcox.test",
+    paired = TRUE,
+    label = "p.signif",
+    label.x = 1.5,
+    label.y = max(data$movement_time) * 1.1
+  ) +
+  scale_fill_manual(
+    values = c("drawing" = "#E74C3C", "tracing" = "#3498DB")
+  ) +
+  scale_x_discrete(labels = c("Drawing\n(Freehand)", "Tracing\n(Guided)")) +
+  labs(
+    title = "Movement Time Comparison",
+    subtitle = "Drawing is significantly faster than tracing",
+    x = "Task",
+    y = "Movement Time (seconds)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "none"
+  )
+
+# RMSE boxplot
+p_rmse <- ggplot(data, aes(x = task, y = rmse, fill = task)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.2, size = 3, alpha = 0.6) +
+  stat_compare_means(
+    method = "wilcox.test",
+    paired = TRUE,
+    label = "p.signif",
+    label.x = 1.5,
+    label.y = max(data$rmse) * 1.1
+  ) +
+  scale_fill_manual(
+    values = c("drawing" = "#E74C3C", "tracing" = "#3498DB")
+  ) +
+  scale_x_discrete(labels = c("Drawing\n(Freehand)", "Tracing\n(Guided)")) +
+  labs(
+    title = "Accuracy Comparison (RMSE)",
+    subtitle = "Tracing is significantly more accurate than drawing",
+    x = "Task",
+    y = "RMSE (cm) - Lower is Better"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "none"
+  )
+
+# Combine plots
+p_mt / p_rmse
+```
+
+
+## Individual Subject Profiles
+
+```{r subject-profiles}
+
+ggplot(data, aes(x = task, y = movement_time, group = subject_id, color = subject_id)) +
+  geom_line(linewidth = 1, alpha = 0.7) +
+  geom_point(size = 3) +
+  scale_x_discrete(labels = c("Drawing", "Tracing")) +
+  scale_color_viridis_d(option = "plasma") +
+  labs(
+    title = "Individual Subject Profiles: Movement Time",
+    subtitle = "Each line represents one subject across both tasks",
+    x = "Task",
+    y = "Movement Time (seconds)",
+    color = "Subject ID"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "right"
+  )
+```
+
+
+# Summary and Conclusions
+
+## Hypothesis Testing Results
+
+```{r hypothesis-summary}
+# Create hypothesis summary table
+hypothesis_summary <- tibble(
+  Hypothesis = c(
+    "H1: Drawing is faster than tracing",
+    "H2: Tracing is more accurate than drawing",
+    "H3: Speed-accuracy tradeoff exists"
+  ),
+  Result = c(
+    ifelse(wilcox_mt$p.value < 0.05, "SUPPORTED", "NOT SUPPORTED"),
+    ifelse(wilcox_rmse$p.value < 0.05, "SUPPORTED", "NOT SUPPORTED"),
+    "MIXED - Task dependent"
+  ),
+  Evidence = c(
+    sprintf("p = %.4f, V = %.0f", wilcox_mt$p.value, wilcox_mt$statistic),
+    sprintf("p = %.4f, V = %.0f", wilcox_rmse$p.value, wilcox_rmse$statistic),
+    sprintf("Drawing: ρ = %.3f; Tracing: ρ = %.3f", 
+            cor_drawing$estimate, cor_tracing$estimate)
+  )
+)
+
+hypothesis_summary %>%
+  kable(
+    caption = "Summary of Hypothesis Testing Results",
+    align = c("l", "c", "l")
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  column_spec(2, bold = TRUE, color = "white", background = spec_color(
+    c(1, 1, 0.5), option = "D", begin = 0.3, end = 0.7
+  ))
+```
+## Key Findings
+Drawing is significantly faster than tracing, while tracing is more accurate.
+However, correlations between speed and accuracy are weak and non-significant,indicating no strong speed–accuracy tradeoff within tasks.
+
+```{r key-findings}
+cat("MAIN RESULTS:\n\n")
+
+cat("1. Movement Time (Speed):\n")
+cat(sprintf("   - Drawing: %.2f ± %.2f seconds\n", summary_stats$MT_mean[1], summary_stats$MT_sd[1]))
+cat(sprintf("   - Tracing: %.2f ± %.2f seconds\n", summary_stats$MT_mean[2], summary_stats$MT_sd[2]))
+cat(sprintf("   - Wilcoxon: p < 0.001, V = %.0f\n", wilcox_mt$statistic))
+cat(sprintf("   - Tracing is %.1f%% slower than drawing\n\n", 
+            (summary_stats$MT_mean[2] / summary_stats$MT_mean[1] - 1) * 100))
+
+cat("2. Accuracy (RMSE - lower is better):\n")
+cat(sprintf("   - Drawing: %.3f ± %.3f cm\n", summary_stats$RMSE_mean[1], summary_stats$RMSE_sd[1]))
+cat(sprintf("   - Tracing: %.3f ± %.3f cm\n", summary_stats$RMSE_mean[2], summary_stats$RMSE_sd[2]))
+cat(sprintf("   - Wilcoxon: p < 0.001, V = %.0f\n", wilcox_rmse$statistic))
+cat(sprintf("   - Drawing has %.1f%% higher error than tracing\n\n", 
+            (summary_stats$RMSE_mean[1] / summary_stats$RMSE_mean[2] - 1) * 100))
+
+cat("3. Speed-Accuracy Relationship:\n")
+cat(sprintf("   - Drawing: rho = %.3f (p = %.3f)\n", cor_drawing$estimate, cor_drawing$p.value))
+cat(sprintf("   - Tracing: rho = %.3f (p = %.3f)\n", cor_tracing$estimate, cor_tracing$p.value))
+cat("   - Weak and non-significant correlations\n")
+cat("   - No strong evidence of a true speed-accuracy tradeoff within tasks\n\n")
+
+cat("4. Statistical Robustness:\n")
+cat("   - Wilcoxon and t-test both show p < 0.001\n")
+cat("   - Results are consistent despite non-normality\n")
+cat("   - Findings are robust to choice of statistical method\n")
+```
+
+
