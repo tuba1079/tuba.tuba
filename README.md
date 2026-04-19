@@ -1,4 +1,6 @@
 # Circle Drawing and Tracing — Speed-Accuracy Analysis
+## Final Report
+[Click here to view the full HTML report](./Tuba_Tuba.html)
 ### Python-R-Git Project | Master STAPS | 2025-2026
 
 ## Author
