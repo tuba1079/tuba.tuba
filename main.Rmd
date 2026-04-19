@@ -237,7 +237,7 @@ shapiro_results %>%
 **Interpretation:** Shapiro-Wilk test shows that the data is not normally distributed (p < 0.05) for both movement time and RMSE. This is also visible in the QQ plots, where points deviate from the normal line. Therefore, non-parametric tests (Wilcoxon) were used for the analysis.
 
 
-# Statistical Hypothesis Testing
+#Step 4: Statistical Hypothesis Testing
 
 ## Prepare Paired Data
 
@@ -283,7 +283,7 @@ wilcox_rmse <- wilcox.test(
   alternative = "greater"  # Drawing expected to be less accurate
 )
 
-# EFFECT SIZE
+#Step 5: EFFECT SIZE
 
 # Movement Time effect size
 mt_long <- paired_data %>%
@@ -313,7 +313,7 @@ wilcox_rmse_eff <- wilcox_effsize(
 
 r_rmse <- wilcox_rmse_eff$effsize
 
-# RESULTS TABLE
+#Step 6: RESULTS TABLE
 
 wilcox_table <- bind_rows(
   tibble(
@@ -352,7 +352,7 @@ wilcox_table %>%
 ```
 
 
-## Robustness Check: Paired t-test (Parametric Alternative)
+#Step 7: Robustness Check: Paired t-test (Parametric Alternative)
 
 ```{r ttest-validation}
 
@@ -375,7 +375,7 @@ kable(comparison_table, digits = 4, caption = "Robustness: Wilcoxon vs t-test Co
 cat("\n**Interpretation:** Both parametric and non-parametric tests show p ≈ 0, confirming result is robust to normality assumption.")
 ```
 
-# Speed-Accuracy Tradeoff Analysis
+#Step 8: Speed-Accuracy Tradeoff Analysis
 
 ## Correlation Tests
 
@@ -466,7 +466,7 @@ ggplot(data, aes(x = movement_time, y = rmse, color = task, shape = task)) +
 ```
 
 
-# Comparative Visualizations
+#Step 9: Comparative Visualizations
 
 ## Box Plots
 
@@ -558,7 +558,7 @@ ggplot(data, aes(x = task, y = movement_time, group = subject_id, color = subjec
 ```
 
 
-# Summary and Conclusions
+#Step 10: Summary and Conclusions
 
 ## Hypothesis Testing Results
 
