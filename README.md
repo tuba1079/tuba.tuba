@@ -1,4 +1,4 @@
-# Circle Drawing and Tracing — Motor Control Analysis
+# Circle Drawing and Tracing — Speed-Accuracy Analysis
 ### Python-R-Git Project | Master STAPS | 2025-2026
 
 ## Author
