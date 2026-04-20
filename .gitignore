@@ -1,20 +1,8 @@
-# Ignore all CSV data files except the 10 sample files in data/
-csv_files_revisions/
+# -----------------------------
+# Project Ignore Rules
+# -----------------------------
 
-# Keep only sample data, ignore if someone adds more CSVs
-data/*.csv
-!data/subject_1_F_38_yrs_old_90_drawing.csv
-!data/subject_2_F_20_yrs_old_100_drawing.csv
-!data/subject_3_F_21_yrs_old_90_drawing.csv
-!data/subject_4_F_23_yrs_old_-20_drawing.csv
-!data/subject_5_F_21_yrs_old_90_drawing.csv
-!data/subject_1_F_38_yrs_old_90_tracing.csv
-!data/subject_2_F_20_yrs_old_100_tracing.csv
-!data/subject_3_F_21_yrs_old_90_tracing.csv
-!data/subject_4_F_23_yrs_old_-20_tracing.csv
-!data/subject_5_F_21_yrs_old_90_tracing.csv
-
-# Jupyter checkpoints
+# Jupyter notebooks
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 
@@ -32,7 +20,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Results folder contents (generated files)
+# Generated results (DO NOT track)
 results/*.png
 results/*.pdf
 results/*.csv
+
+# Optional: temp or revision folders
+csv_files_revisions/
