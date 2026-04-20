@@ -2,7 +2,10 @@
 # Project Ignore Rules
 # -----------------------------
 
-# Jupyter notebooks
+# Optional: temp or revision folders
+csv_files_revisions/
+
+# Jupyter checkpoints
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 
@@ -24,6 +27,3 @@ Thumbs.db
 results/*.png
 results/*.pdf
 results/*.csv
-
-# Optional: temp or revision folders
-csv_files_revisions/
